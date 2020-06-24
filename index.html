@@ -1,0 +1,139 @@
+<style>
+.hidden{
+    display: none;
+}
+canvas{
+    border: 1px solid black;
+}
+</style>
+
+<div id="root"></div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.4.2/react.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.4.2/react-dom.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.21.1/babel.min.js"></script>
+<script type="text/babel">
+class Canvas extends React.Component{
+    constructor(props){
+        super(props);
+        this.state = {
+            mouse: {
+                x: 50,
+                y: 50    
+            },
+            cheese: [{x: 0, y: 0}],
+            points: 0,
+            growthFactor: 0.2
+        }       
+    }
+    
+    componentDidMount(){
+        const canvas = this.refs.canvas
+        const ctx = canvas.getContext("2d")
+        const mouse = this.refs.mouse
+        mouse.onload = () => {
+            ctx.drawImage(mouse, this.state.mouse.x, this.state.mouse.y, mouse.width * this.state.growthFactor, mouse.height * this.state.growthFactor)
+        }
+        this.trigger()
+        canvas.focus()
+    }
+
+    trigger(){
+        setInterval(() => { 
+            this.createCheese()
+        }, 5000);
+    }
+
+    componentDidUpdate(){
+        console.log()
+        const canvas = this.refs.canvas
+        const ctx = canvas.getContext("2d")
+        const mouse = this.refs.mouse
+        const cheese = this.refs.cheese
+        const mouseX = this.state.mouse.x
+        const mouseY = this.state.mouse.y
+        const obj = this
+        ctx.clearRect(0, 0, 1000, 500)
+        ctx.drawImage(mouse, mouseX, mouseY, mouse.width * this.state.growthFactor, mouse.height * this.state.growthFactor)
+        this.state.cheese.forEach(drawCheese)
+
+        function drawCheese(itemCheese){
+            const corrective = 0.5
+            if (!((mouseX < (itemCheese.x + mouse.width * obj.state.growthFactor * corrective) && (mouseX > (itemCheese.x - mouse.width * obj.state.growthFactor * corrective)) && (mouseY < (itemCheese.y + mouse.height * obj.state.growthFactor * corrective) && (mouseY > (itemCheese.y - mouse.height * obj.state.growthFactor * corrective)))))){
+                ctx.drawImage(cheese, itemCheese.x, itemCheese.y, cheese.width/10, cheese.height/10)
+            }else{
+                const dataCheese = obj.state.cheese.filter(i => (i.x !== itemCheese.x) && (i.y !== itemCheese.y))
+                obj.setState({
+                    mouse: obj.state.mouse,
+                    cheese: dataCheese,
+                    points: obj.state.points + 1,
+                    growthFactor: obj.state.growthFactor + 0.05
+                })
+            }
+        }
+    }
+
+    changeStateMouse(dx,dy) {
+        this.setState({
+            mouse: {
+                x: this.state.mouse.x + dx,
+                y: this.state.mouse.y + dy
+            },
+            cheese: this.state.cheese,
+            points: this.state.points,
+            growthFactor: this.state.growthFactor
+        });
+    }
+
+    createCheese(){
+        const x = Math.floor(Math.random() * 1000) 
+        const y = Math.floor(Math.random() * 500)
+        var stateCheese = this.state.cheese
+        stateCheese.push({x: x, y: y})
+        this.setState({
+            mouse:{
+                x: this.state.mouse.x,
+                y: this.state.mouse.y
+            },
+            cheese: stateCheese,
+            points: this.state.points,
+            growthFactor: this.state.growthFactor
+        })
+    }
+
+    keydown(e){
+        var dy = 0
+        var dx = 0
+        const vel = 3
+        if(e.keyCode == 38){
+            dy -= vel
+        }
+        if(e.keyCode == 40){
+            dy += vel          
+        }
+        if(e.keyCode == 37){
+            dx -= vel
+        }
+        if(e.keyCode == 39){
+            dx += vel
+        }
+        this.changeStateMouse(dx,dy)
+    }
+
+    render(){
+        return(
+            <div>
+                <canvas tabIndex="0" onKeyDown={(e) => this.keydown(e)} ref="canvas" width={1000} height={500}></canvas>
+                <img ref="mouse" src="mouse.png" className="hidden"/>
+                <img ref="cheese" src="cheese.jpg" className="hidden"/>
+                <h1>Points: {this.state.points}</h1>
+            </div>
+        )
+    }
+}
+ReactDOM.render(
+    <Canvas/>,
+    document.getElementById('root')
+);
+
+</script>
